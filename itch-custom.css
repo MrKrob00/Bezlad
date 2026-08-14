@@ -12,7 +12,8 @@
   --paper:    #E7EDF3;   /* тло-аркуш */
   --paper-2:  #F3F7FB;   /* блоки поверх аркуша */
   --ink:      #16233A;   /* креслярська туш */
-  --ink-soft: #8695AC;   /* бліда лінія, підписи */
+  --ink-soft: #8695AC;   /* бліда ЛІНІЯ: рамки, пунктир. Для тексту засвітла */
+  --ink-mute: #57677F;   /* приглушений ТЕКСТ: 4.9:1 на папері, проходить WCAG AA */
   --chaos:    #FF2E74;   /* акцент: кнопки, посилання */
   --order:    #14907F;   /* другорядний акцент */
   --line:     rgba(22, 35, 58, 0.16);
@@ -24,10 +25,10 @@
 }
 
 /* ── Варіант «синька» ──────────────────────────────────────────
-   Хочеш темну версію замість паперової — заміни шість значень вище:
+   Хочеш темну версію замість паперової — заміни значення вище:
      --paper:#0A1220  --paper-2:#101E32  --ink:#D8E8FA
-     --ink-soft:#55708F  --chaos:#FF4D86  --order:#35C2AE
-   і два службові:
+     --ink-soft:#55708F  --ink-mute:#7E95B4
+     --chaos:#FF4D86  --order:#35C2AE
      --line:rgba(216,232,250,.18)  --grid:rgba(216,232,250,.08)
    ────────────────────────────────────────────────────────────── */
 
@@ -52,6 +53,23 @@ body.game_page {
   background: transparent !important;
 }
 
+/* ── Найважливіше правило у файлі ────────────────────────────
+   itch.io ставить колір тексту не лише на body, а на купі конкретних
+   селекторів (.user_formatted p, .community_post p, .game_info_panel_widget td…).
+   Під стандартну темну тему той текст світлий — і на паперовому тлі
+   він просто зникає. Тут ми змушуємо все успадковувати колір від body.
+
+   Свідомо БЕЗ !important: специфічності з id вистачає, щоб побороти
+   правила itch.io, а власні кольорові правила нижче мають !important
+   і тому спокійно перекривають це успадкування.
+   ──────────────────────────────────────────────────────────── */
+
+#view_game_page, #view_game_page *,
+#wrapper .footer, #wrapper .footer *,
+#header, #header * {
+  color: inherit;
+}
+
 /* ── Верхня панель і хлібні крихти: приглушити ──────────────── */
 
 #header, .header_widget, .primary_header {
@@ -60,7 +78,7 @@ body.game_page {
 }
 
 .breadcrumbs, .breadcrumbs a {
-  color: var(--ink-soft) !important;
+  color: var(--ink-mute) !important;
   font-size: 11px !important;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -89,7 +107,7 @@ h1, .game_title, #view_game_page h1 {
 }
 
 .game_short_text, .game_page .game_short_text {
-  color: var(--ink-soft) !important;
+  color: var(--ink-mute) !important;
   font-size: 11px !important;
   letter-spacing: 0.18em !important;
   text-transform: uppercase;
@@ -190,7 +208,7 @@ h1, .game_title, #view_game_page h1 {
   background: var(--paper-2);
   margin: 0 0 14px;
   padding: 11px 16px;
-  color: var(--ink-soft);
+  color: var(--ink-mute) !important;
 }
 
 .user_formatted code, .user_formatted pre {
@@ -222,7 +240,7 @@ h1, .game_title, #view_game_page h1 {
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--ink-mute);
   font-weight: 700;
 }
 
@@ -258,7 +276,7 @@ a:hover { text-decoration: underline; }
 }
 
 .game_info_panel_widget table td:first-child {
-  color: var(--ink-soft) !important;
+  color: var(--ink-mute) !important;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-size: 10px;
@@ -285,7 +303,7 @@ a:hover { text-decoration: underline; }
 }
 
 .community_post .post_header, .post_date, .post_meta {
-  color: var(--ink-soft) !important;
+  color: var(--ink-mute) !important;
   font-size: 10px !important;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -309,11 +327,11 @@ textarea:focus, input:focus {
 
 .footer, #footer, .related_games_widget {
   border-top: 1px solid var(--line) !important;
-  color: var(--ink-soft) !important;
+  color: var(--ink-mute) !important;
   background: transparent !important;
 }
 
-.footer a, #footer a { color: var(--ink-soft) !important; }
+.footer a, #footer a { color: var(--ink-mute) !important; }
 
 /* ── Вузькі екрани ──────────────────────────────────────────── */
 
