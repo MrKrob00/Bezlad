@@ -1,0 +1,341 @@
+/* ══════════════════════════════════════════════════════════════
+   БЕЗЛАД — оформлення сторінки на itch.io
+   Та сама креслярська мова, що й у грі: аркуш, міліметрівка,
+   рамки-штампи, моноширинний шрифт, малиновий акцент хаосу.
+
+   Куди вставляти: Edit game → Theme → поле «Custom CSS».
+   Порада: у самому Theme-редакторі постав фон таким самим (#E7EDF3),
+   інакше під час завантаження сторінки мигне стандартний темний.
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  --paper:    #E7EDF3;   /* тло-аркуш */
+  --paper-2:  #F3F7FB;   /* блоки поверх аркуша */
+  --ink:      #16233A;   /* креслярська туш */
+  --ink-soft: #8695AC;   /* бліда лінія, підписи */
+  --chaos:    #FF2E74;   /* акцент: кнопки, посилання */
+  --order:    #14907F;   /* другорядний акцент */
+  --line:     rgba(22, 35, 58, 0.16);
+  --grid:     rgba(22, 35, 58, 0.07);
+  --shadow:   rgba(22, 35, 58, 0.13);
+
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+          "Liberation Mono", monospace;
+}
+
+/* ── Варіант «синька» ──────────────────────────────────────────
+   Хочеш темну версію замість паперової — заміни шість значень вище:
+     --paper:#0A1220  --paper-2:#101E32  --ink:#D8E8FA
+     --ink-soft:#55708F  --chaos:#FF4D86  --order:#35C2AE
+   і два службові:
+     --line:rgba(216,232,250,.18)  --grid:rgba(216,232,250,.08)
+   ────────────────────────────────────────────────────────────── */
+
+/* ── Аркуш із міліметрівкою ─────────────────────────────────── */
+
+body,
+body.game_page {
+  background-color: var(--paper) !important;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) !important;
+  background-size: 40px 40px !important;
+  background-attachment: fixed !important;
+  background-position: center top !important;
+  color: var(--ink) !important;
+  font-family: var(--mono) !important;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+#wrapper, .main, .inner_column, .page_widget {
+  background: transparent !important;
+}
+
+/* ── Верхня панель і хлібні крихти: приглушити ──────────────── */
+
+#header, .header_widget, .primary_header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+.breadcrumbs, .breadcrumbs a {
+  color: var(--ink-soft) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* ── Назва гри як креслярський штамп ────────────────────────── */
+
+#view_game_page .header,
+.view_game_page > .header {
+  border: 1px solid var(--ink) !important;
+  background: var(--paper) !important;
+  padding: 18px 22px !important;
+  margin-bottom: 22px !important;
+  box-shadow: 5px 5px 0 var(--shadow);
+}
+
+h1, .game_title, #view_game_page h1 {
+  font-family: var(--mono) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3em !important;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink) !important;
+  margin: 0 !important;
+  text-wrap: balance;
+}
+
+.game_short_text, .game_page .game_short_text {
+  color: var(--ink-soft) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase;
+  margin-top: 9px !important;
+}
+
+/* ── Вікно гри: обвести як креслення ────────────────────────── */
+
+.game_frame, .html_embed_widget, .embed_wrapper {
+  border: 1px solid var(--ink) !important;
+  background: var(--paper-2) !important;
+  box-shadow: 6px 6px 0 var(--shadow);
+  overflow: hidden;
+}
+
+.game_frame iframe, .embed_wrapper iframe {
+  display: block;
+  border: 0 !important;
+  background: var(--paper) !important;
+}
+
+/* Кнопка «Run game» — та сама, що «Випустити кота» в грі */
+.load_iframe_btn,
+.game_frame .load_iframe_btn {
+  background: var(--chaos) !important;
+  color: var(--paper) !important;
+  border: 1px solid var(--chaos) !important;
+  border-radius: 0 !important;
+  font-family: var(--mono) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.3em !important;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  padding: 15px 30px !important;
+  box-shadow: none !important;
+  transition: filter 0.15s ease;
+}
+
+.load_iframe_btn:hover { filter: brightness(1.1); }
+
+/* ── Кнопки завантаження / купівлі ──────────────────────────── */
+
+.buy_row .button, .download_btn, a.button, .button {
+  background: var(--chaos) !important;
+  color: var(--paper) !important;
+  border: 1px solid var(--chaos) !important;
+  border-radius: 0 !important;
+  font-family: var(--mono) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.button:hover { filter: brightness(1.1); }
+
+/* Другорядні кнопки — контурні, щоб не сперечалися з головною */
+.buy_row .button.secondary, .button.outline {
+  background: transparent !important;
+  color: var(--ink) !important;
+  border-color: var(--ink) !important;
+}
+
+/* ── Текст опису ────────────────────────────────────────────── */
+
+.formatted_description, .user_formatted {
+  font-family: var(--mono) !important;
+  color: var(--ink) !important;
+  max-width: 68ch;
+}
+
+.user_formatted h1, .user_formatted h2, .user_formatted h3 {
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 7px;
+  margin: 30px 0 14px !important;
+  text-indent: 0;
+}
+
+.user_formatted h1 { font-size: 19px !important; }
+.user_formatted h2 { font-size: 16px !important; }
+.user_formatted h3 { font-size: 14px !important; }
+
+.user_formatted p { margin: 0 0 14px !important; }
+
+.user_formatted strong, .user_formatted b {
+  color: var(--chaos) !important;
+  font-weight: 700;
+}
+
+.user_formatted blockquote {
+  border-left: 2px solid var(--chaos);
+  background: var(--paper-2);
+  margin: 0 0 14px;
+  padding: 11px 16px;
+  color: var(--ink-soft);
+}
+
+.user_formatted code, .user_formatted pre {
+  background: var(--paper-2) !important;
+  border: 1px solid var(--line);
+  color: var(--ink) !important;
+  font-family: var(--mono) !important;
+}
+
+.user_formatted pre { padding: 12px 14px; overflow-x: auto; }
+.user_formatted code { padding: 1px 5px; }
+
+/* Таблиця керування в описі — як специфікація на кресленні */
+.user_formatted table {
+  border-collapse: collapse;
+  border: 1px solid var(--ink);
+  width: 100%;
+  margin: 0 0 16px;
+}
+
+.user_formatted th, .user_formatted td {
+  border: 1px solid var(--line);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.user_formatted th {
+  background: var(--paper-2);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+/* ── Посилання ──────────────────────────────────────────────── */
+
+a, .user_formatted a {
+  color: var(--chaos) !important;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 2px solid var(--chaos) !important;
+  outline-offset: 2px;
+}
+
+/* ── Права панель: таблиця даних ────────────────────────────── */
+
+.game_info_panel_widget {
+  border: 1px solid var(--ink) !important;
+  background: var(--paper) !important;
+  padding: 14px 16px !important;
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.game_info_panel_widget table td {
+  border-bottom: 1px solid var(--line);
+  padding: 6px 0 !important;
+  font-size: 12px;
+  vertical-align: top;
+}
+
+.game_info_panel_widget table td:first-child {
+  color: var(--ink-soft) !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 10px;
+  padding-right: 14px !important;
+  white-space: nowrap;
+}
+
+/* ── Скріншоти ──────────────────────────────────────────────── */
+
+.screenshot_list img, .screenshot_list a {
+  border: 1px solid var(--ink) !important;
+  border-radius: 0 !important;
+  background: var(--paper-2);
+}
+
+/* ── Коментарі й девлоги ────────────────────────────────────── */
+
+.community_post, .game_devlog_widget .devlog_entry {
+  border: 1px solid var(--line) !important;
+  background: var(--paper) !important;
+  border-radius: 0 !important;
+  padding: 13px 16px !important;
+  margin-bottom: 12px;
+}
+
+.community_post .post_header, .post_date, .post_meta {
+  color: var(--ink-soft) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+textarea, input[type="text"], input[type="email"] {
+  font-family: var(--mono) !important;
+  background: var(--paper-2) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--ink-soft) !important;
+  border-radius: 0 !important;
+  padding: 9px 11px !important;
+}
+
+textarea:focus, input:focus {
+  border-color: var(--chaos) !important;
+  outline: none !important;
+}
+
+/* ── Підвал і «схожі ігри» ──────────────────────────────────── */
+
+.footer, #footer, .related_games_widget {
+  border-top: 1px solid var(--line) !important;
+  color: var(--ink-soft) !important;
+  background: transparent !important;
+}
+
+.footer a, #footer a { color: var(--ink-soft) !important; }
+
+/* ── Вузькі екрани ──────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  body, body.game_page { font-size: 14px; }
+
+  h1, .game_title { letter-spacing: 0.18em !important; text-indent: 0.18em; }
+
+  #view_game_page .header,
+  .view_game_page > .header {
+    padding: 14px 16px !important;
+    box-shadow: 3px 3px 0 var(--shadow);
+  }
+
+  .game_frame, .html_embed_widget { box-shadow: 3px 3px 0 var(--shadow); }
+
+  .load_iframe_btn { letter-spacing: 0.18em !important; padding: 13px 20px !important; }
+
+  /* довгі таблиці не повинні розсувати сторінку вбік */
+  .user_formatted table { display: block; overflow-x: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; }
+}
