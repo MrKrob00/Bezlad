@@ -1,0 +1,268 @@
+<title>Обкладинка</title>
+<style>
+  body { margin: 0; background: #444; display: grid; place-items: center; min-height: 100vh; }
+  canvas { display: block; }
+</style>
+<canvas id="c" width="1260" height="1000"></canvas>
+<script>
+// Обкладинка для itch: 630 × 500, рендер у 2×.
+// Малюється тими самими примітивами, що й гра.
+
+const P = {
+  paper:   { paper:"#E7EDF3", paper2:"#F3F7FB", ink:"#16233A", soft:"#8695AC",
+             grid:"rgba(22,35,58,0.09)", hatch:"rgba(22,35,58,0.15)",
+             chaos:"#FF2E74", order:"#0E7C6D", shadow:"rgba(22,35,58,0.16)" },
+  blue:    { paper:"#0A1220", paper2:"#101E32", ink:"#D8E8FA", soft:"#55708F",
+             grid:"rgba(216,232,250,0.10)", hatch:"rgba(216,232,250,0.16)",
+             chaos:"#FF4D86", order:"#35C2AE", shadow:"rgba(0,0,0,0.5)" },
+};
+
+const TAU = Math.PI * 2;
+const cv = document.getElementById("c");
+const x = cv.getContext("2d");
+let C = P.paper;
+
+const MONO = '700 %dpx ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+
+// ── примітиви речей, ті самі, що в грі ──────────────────────
+const SHAPES = {
+  mug(s) {
+    x.beginPath(); x.arc(0,0,9*s,0,TAU); x.fill(); x.stroke();
+    x.beginPath(); x.arc(0,0,5.5*s,0,TAU); x.stroke();
+    x.beginPath(); x.arc(11*s,0,4*s,-1.1,1.1); x.stroke();
+  },
+  book(s) {
+    x.beginPath(); x.rect(-11*s,-8*s,22*s,16*s); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(-6*s,-8*s); x.lineTo(-6*s,8*s); x.stroke();
+    x.beginPath();
+    x.moveTo(-2*s,-4*s); x.lineTo(8*s,-4*s);
+    x.moveTo(-2*s,0);    x.lineTo(8*s,0);
+    x.moveTo(-2*s,4*s);  x.lineTo(5*s,4*s); x.stroke();
+  },
+  plate(s) {
+    x.beginPath(); x.arc(0,0,12*s,0,TAU); x.fill(); x.stroke();
+    x.beginPath(); x.arc(0,0,7.5*s,0,TAU); x.stroke();
+  },
+  bottle(s) {
+    x.beginPath(); x.roundRect(-6*s,-4*s,12*s,16*s,3*s); x.fill(); x.stroke();
+    x.beginPath(); x.rect(-2.5*s,-12*s,5*s,9*s); x.fill(); x.stroke();
+  },
+  plant(s) {
+    x.beginPath();
+    x.moveTo(-7*s,2*s); x.lineTo(7*s,2*s); x.lineTo(5*s,13*s); x.lineTo(-5*s,13*s);
+    x.closePath(); x.fill(); x.stroke();
+    for (const a of [-1.9,-1.2,-0.5,0.15]) {
+      x.beginPath();
+      x.ellipse(Math.cos(a)*7*s, Math.sin(a)*7*s-2*s, 6*s, 3.2*s, a, 0, TAU);
+      x.fill(); x.stroke();
+    }
+  },
+  lamp(s) {
+    x.beginPath();
+    x.moveTo(-10*s,8*s); x.lineTo(-5*s,-8*s); x.lineTo(5*s,-8*s); x.lineTo(10*s,8*s);
+    x.closePath(); x.fill(); x.stroke();
+  },
+  ball(s) {
+    x.beginPath(); x.arc(0,0,10*s,0,TAU); x.fill(); x.stroke();
+    x.beginPath(); x.ellipse(0,0,4*s,10*s,0,0,TAU); x.stroke();
+    x.beginPath(); x.moveTo(-10*s,0); x.lineTo(10*s,0); x.stroke();
+  },
+  papers(s) {
+    for (let i=2;i>=0;i--) {
+      x.save(); x.rotate(i*0.16-0.16);
+      x.beginPath(); x.rect(-10*s,-7*s,20*s,14*s); x.fill(); x.stroke();
+      x.restore();
+    }
+  },
+  frame(s) {
+    x.beginPath(); x.rect(-11*s,-9*s,22*s,18*s); x.fill(); x.stroke();
+    x.beginPath(); x.rect(-7*s,-5*s,14*s,10*s); x.stroke();
+  },
+};
+
+function hatch(rx, ry, rw, rh) {
+  x.save();
+  x.beginPath(); x.rect(rx,ry,rw,rh); x.clip();
+  x.strokeStyle = C.hatch; x.lineWidth = 2;
+  x.beginPath();
+  for (let i=-rh; i<rw; i+=18) { x.moveTo(rx+i, ry+rh); x.lineTo(rx+i+rh, ry); }
+  x.stroke();
+  x.restore();
+}
+
+function ghost(gx, gy, r) {
+  x.save();
+  x.setLineDash([8,8]); x.strokeStyle = C.soft; x.lineWidth = 2.4;
+  x.beginPath(); x.arc(gx,gy,r,0,TAU); x.stroke();
+  x.restore();
+}
+
+function leader(ax, ay, bx, by) {
+  x.save();
+  x.setLineDash([5,7]); x.strokeStyle = C.chaos; x.lineWidth = 2.4;
+  x.globalAlpha = 0.85;
+  x.beginPath(); x.moveTo(ax,ay); x.lineTo(bx,by); x.stroke();
+  x.restore();
+}
+
+function item(kind, ix, iy, rot, s, loose) {
+  x.save();
+  x.translate(ix,iy); x.rotate(rot);
+  x.lineWidth = 3; x.lineJoin = "round";
+  x.strokeStyle = loose ? C.chaos : C.ink;
+  x.fillStyle = C.paper2;
+  SHAPES[kind](s);
+  x.restore();
+}
+
+function cat(cx, cy, ang, s) {
+  // швидкісні лінії — рух мовою креслення, а не розмита пляма
+  x.save();
+  x.strokeStyle = C.chaos; x.lineCap = "round";
+  const nx = Math.cos(ang), ny = Math.sin(ang);
+  const px = -ny, py = nx;
+  for (const [off, len, a, w] of [[-34,150,0.5,7],[-12,215,0.75,9],[12,190,0.65,8],[34,120,0.4,6]]) {
+    x.globalAlpha = a; x.lineWidth = w*s/3.1;
+    const sx = cx + px*off*s/3.1 - nx*26*s/3.1;
+    const sy = cy + py*off*s/3.1 - ny*26*s/3.1;
+    x.beginPath();
+    x.moveTo(sx, sy);
+    x.lineTo(sx - nx*len*s/3.1, sy - ny*len*s/3.1);
+    x.stroke();
+  }
+  x.restore();
+
+  x.save();
+  x.translate(cx,cy); x.rotate(ang); x.scale(1.3, 0.82);
+
+  x.strokeStyle = C.chaos; x.lineWidth = 5*s; x.lineCap = "round";
+  x.beginPath();
+  x.moveTo((-17+2)*s, 0);
+  x.quadraticCurveTo((-17-12)*s, 11*s, (-17-21)*s, 3*s);
+  x.stroke();
+
+  x.fillStyle = C.chaos;
+  x.beginPath(); x.ellipse(0,0,17*s,14.6*s,0,0,TAU); x.fill();
+
+  x.beginPath();
+  x.moveTo(6*s,-11*s); x.lineTo(13*s,-19*s); x.lineTo(14*s,-8*s); x.closePath();
+  x.moveTo(6*s, 11*s); x.lineTo(13*s, 19*s); x.lineTo(14*s, 8*s); x.closePath();
+  x.fill();
+
+  x.fillStyle = C.paper;
+  x.beginPath();
+  x.arc(10*s,-5*s,2.6*s,0,TAU);
+  x.arc(10*s, 5*s,2.6*s,0,TAU);
+  x.fill();
+  x.restore();
+}
+
+
+function drone(dx, dy, s, carry) {
+  x.save();
+  x.translate(dx, dy);
+  const r = 20 * s;
+  x.strokeStyle = C.order; x.fillStyle = C.paper2; x.lineWidth = 3.4;
+  x.beginPath(); x.roundRect(-r,-r,r*2,r*2,5*s); x.fill(); x.stroke();
+  x.globalAlpha = 0.6; x.lineWidth = 2.2;
+  for (const [ox,oy] of [[-r,-r],[r,-r],[-r,r],[r,r]]) {
+    x.beginPath(); x.arc(ox,oy,6.5*s,0,TAU); x.stroke();
+  }
+  x.globalAlpha = 1;
+  x.lineWidth = 2.6;
+  x.beginPath(); x.moveTo(-r+5*s, 0); x.lineTo(r-5*s, 0); x.stroke();
+  x.restore();
+
+  if (carry) {
+    x.save();
+    x.setLineDash([5,6]); x.strokeStyle = C.order; x.globalAlpha = 0.75; x.lineWidth = 2.4;
+    x.beginPath(); x.moveTo(dx,dy); x.lineTo(carry[0], carry[1]); x.stroke();
+    x.restore();
+  }
+}
+
+function draw(pal) {
+  C = P[pal];
+  x.setTransform(1,0,0,1,0,0);
+  x.fillStyle = C.paper; x.fillRect(0,0,1260,1000);
+
+  // міліметрівка
+  x.strokeStyle = C.grid; x.lineWidth = 2;
+  x.beginPath();
+  for (let i=0;i<=1260;i+=80) { x.moveTo(i,0); x.lineTo(i,1000); }
+  for (let i=0;i<=1000;i+=80) { x.moveTo(0,i); x.lineTo(1260,i); }
+  x.stroke();
+
+  // стіни поché — рамка аркуша
+  x.fillStyle = C.ink;
+  x.fillRect(0,0,1260,26);
+  x.fillRect(0,974,1260,26);
+  x.fillRect(0,0,26,1000);
+  x.fillRect(1234,0,26,1000);
+
+  // стіл-поверхня, з якого все злетіло
+  x.strokeStyle = C.soft; x.lineWidth = 2.6; x.fillStyle = C.paper2;
+  x.beginPath(); x.rect(96,300,392,250); x.fill(); x.stroke();
+  x.font = MONO.replace("%d", 22);
+  x.fillStyle = C.soft; x.textAlign = "center"; x.textBaseline = "middle";
+  x.globalAlpha = 0.8; x.fillText("С Т І Л", 292, 425); x.globalAlpha = 1;
+
+  // суцільна шафа
+  x.strokeStyle = C.ink; x.lineWidth = 3.4; x.fillStyle = C.paper2;
+  x.beginPath(); x.rect(940,120,250,190); x.fill(); x.stroke();
+  hatch(940,120,250,190);
+
+  // порожні контури — звідки речі втекли
+  ghost(200, 380, 30);
+  ghost(300, 355, 30);
+  ghost(1035, 402, 30);
+  ghost(258, 640, 30);
+
+  // виносні лінії до розкиданих речей
+  leader(200, 380, 452, 168);
+  leader(300, 355, 700, 706);
+  leader(1035, 402, 892, 838);
+  leader(258, 640, 118, 452);
+
+  // речі, що лишились на місці
+  item("book",   372, 636, 0.04, 2.5, false);
+  item("plate",  196, 224, 0,    2.3, false);
+
+  // розкидане
+  item("papers", 452, 168,  0.5, 2.7, true);
+  item("mug",    700, 706, -0.8, 2.7, true);
+  item("bottle", 892, 838,  1.1, 2.7, true);
+  item("ball",   118, 452,  0,   2.4, true);
+  item("plant",  1112, 656, 0.3, 2.6, true);
+
+  // дрон несе горщик назад на місце
+  drone(1052, 540, 1.0, [1112, 656]);
+
+  // кіт у ривку
+  cat(768, 452, -0.40, 3.4);
+
+  // штамп із назвою
+  const bx = 78, by = 760, bw = 560, bh = 168;
+  x.fillStyle = C.shadow; x.fillRect(bx+11, by+11, bw, bh);
+  x.fillStyle = C.paper; x.strokeStyle = C.ink; x.lineWidth = 4;
+  x.beginPath(); x.rect(bx,by,bw,bh); x.fill(); x.stroke();
+
+  x.textAlign = "left"; x.textBaseline = "alphabetic";
+  x.fillStyle = C.ink;
+  x.font = MONO.replace("%d", 76);
+  const title = "БЕЗЛАД";
+  let tx = bx + 36;
+  for (const ch of title) { x.fillText(ch, tx, by + 96); tx += x.measureText(ch).width + 15; }
+
+  x.fillStyle = C.chaos;
+  x.font = MONO.replace("%d", 21);
+  let sx = bx + 38;
+  for (const ch of "90 СЕКУНД НА ХАОС") {
+    x.fillText(ch, sx, by + 136);
+    sx += x.measureText(ch).width + 4.5;
+  }
+}
+
+window.__draw = draw;
+draw("paper");
+</script>
