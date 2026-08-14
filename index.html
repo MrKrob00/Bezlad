@@ -462,7 +462,8 @@
     </div>
 
     <div class="tools">
-      <button class="icon" id="mute" title="Звук" aria-label="Увімкнути або вимкнути звук">♪</button>
+      <button class="icon" id="musicBtn" title="Музика" aria-label="Увімкнути або вимкнути музику" aria-pressed="false">♫</button>
+      <button class="icon" id="mute" title="Звук" aria-label="Увімкнути або вимкнути звук" aria-pressed="false">♪</button>
       <button id="dash" aria-label="Ривок">РИВОК</button>
     </div>
 
@@ -697,6 +698,142 @@
     start: () => { tone(320, 640, 0.16, "triangle", 0.24); },
     over:  () => { tone(420, 110, 0.7, "sawtooth", 0.2); },
   };
+
+  // ═══════════════════════════════════════════════════════════
+  //  МУЗИКА
+  //
+  //  Синтезується тут же, файлів немає. Механічний мотор-пульс:
+  //  рівні вісімки, як хід креслярської машини.
+  //
+  //  Головне — вона слухає рівень безладу. Порядок звучить чисто
+  //  й розріджено; що більший хаос, то швидший темп, більше шарів
+  //  і сильніше розстроєні голоси. Той самий принцип, що й
+  //  тремтіння ліній на плані: носій сам розповідає про тему.
+  // ═══════════════════════════════════════════════════════════
+
+  const music = { gain: null, timer: null, next: 0, step: 0, playing: false };
+  let musicOff = false;
+
+  // Am – Am – F – G. Мінор, який весь час тягне вперед і не розв'язується.
+  const PROG = [
+    { root: 110.00, scale: [0, 3, 5, 7, 10] },
+    { root: 110.00, scale: [0, 3, 5, 7, 10] },
+    { root:  87.31, scale: [0, 4, 5, 7, 11] },
+    { root:  98.00, scale: [0, 4, 5, 7, 10] },
+  ];
+
+  const semi = (f, n) => f * Math.pow(2, n / 12);
+
+  function mVoice(type, f, t, dur, vol, cutoff, detune) {
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    const lp = actx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(cutoff, t);
+    o.type = type;
+    o.frequency.setValueAtTime(f, t);
+    if (detune) o.detune.setValueAtTime(detune, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(lp); lp.connect(g); g.connect(music.gain);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+
+  function mKick(t) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(125, t);
+    o.frequency.exponentialRampToValueAtTime(44, t + 0.09);
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.17);
+    o.connect(g); g.connect(music.gain);
+    o.start(t); o.stop(t + 0.2);
+  }
+
+  // Сухий цок — олівець по кульману
+  function mTick(t, vol) {
+    const s = actx.createBufferSource(); s.buffer = noiseBuf;
+    const hp = actx.createBiquadFilter();
+    hp.type = "highpass"; hp.frequency.setValueAtTime(6500, t);
+    const g = actx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
+    s.connect(hp); hp.connect(g); g.connect(music.gain);
+    s.start(t); s.stop(t + 0.05);
+  }
+
+  function mStep(s, t) {
+    const bar = (s >> 4) & 3, pos = s & 15;
+    const ch = PROG[bar];
+    const m = mess;
+
+    // Бас: рівні вісімки. Розстроюється разом із безладом.
+    if (pos % 2 === 0) {
+      const oct = (pos === 6 || pos === 14) ? 2 : 1;
+      mVoice("sawtooth", ch.root * oct, t, 0.19, 0.26,
+             320 + m * 1100, 0);
+      if (m > 0.12) {
+        mVoice("sawtooth", ch.root * oct, t, 0.19, 0.13 * m + 0.05,
+               320 + m * 1100, m * 26);
+      }
+    }
+
+    // Бочка: спершу через такт, під кінець — рівна
+    if (pos === 0 || pos === 8) mKick(t);
+    else if (m > 0.42 && (pos === 4 || pos === 12)) mKick(t);
+
+    // Цоки на шістнадцятих
+    if (m > 0.14 && pos % 2 === 1) mTick(t, 0.05 + m * 0.09);
+
+    // Арпеджіо вступає, коли безлад уже помітний
+    if (m > 0.33 && pos % 2 === 1) {
+      let n = ch.scale[(pos * 3 + bar) % ch.scale.length];
+      // під кінець у гаму проникають чужі ноти
+      if (m > 0.66 && Math.random() < (m - 0.66) * 1.2) n += 1;
+      mVoice("square", semi(ch.root * 4, n), t, 0.13,
+             0.05 + m * 0.07, 2200 + m * 1800, 0);
+    }
+  }
+
+  function musicSchedule() {
+    if (!actx || !music.playing) return;
+    if (phase !== "play") { music.next = actx.currentTime; return; }
+
+    const bpm = 118 + mess * 24;
+    const step16 = 60 / bpm / 4;
+    while (music.next < actx.currentTime + 0.15) {
+      mStep(music.step, music.next);
+      music.next += step16;
+      music.step = (music.step + 1) & 63;
+    }
+  }
+
+  function musicStart() {
+    if (!audio() || musicOff) return;
+    musicStop();
+    music.gain = actx.createGain();
+    music.gain.gain.setValueAtTime(0.0001, actx.currentTime);
+    music.gain.gain.exponentialRampToValueAtTime(1.15, actx.currentTime + 1.2);
+    music.gain.connect(master);
+    music.next = actx.currentTime + 0.06;
+    music.step = 0;
+    music.playing = true;
+    music.timer = setInterval(musicSchedule, 25);
+  }
+
+  function musicStop() {
+    if (music.timer) { clearInterval(music.timer); music.timer = null; }
+    music.playing = false;
+    if (music.gain) {
+      const g = music.gain, t = actx.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      setTimeout(() => g.disconnect(), 700);
+      music.gain = null;
+    }
+  }
 
   // ═══════════════════════════════════════════════════════════
   //  СТАН
@@ -1477,6 +1614,7 @@
     el("endView").hidden = true;
     phase = "play";
     sfx.start();
+    musicStart();
   }
 
   const VERDICTS = [
@@ -1490,6 +1628,7 @@
 
   function finish() {
     phase = "over";
+    musicStop();
     sfx.over();
     el("fScore").textContent = Math.round(score);
     el("fPeak").textContent = Math.round(peak * 100) + "%";
@@ -1518,6 +1657,7 @@
     }
     if (k === "r" && phase !== "menu") return start();
     if (k === "m") return toggleMute();
+    if (k === "n") return toggleMusic();
     keys.add(k);
   });
 
@@ -1566,6 +1706,15 @@
   }
   el("mute").addEventListener("click", toggleMute);
 
+  function toggleMusic() {
+    musicOff = !musicOff;
+    if (musicOff) musicStop();
+    else if (phase === "play") musicStart();
+    el("musicBtn").style.opacity = musicOff ? "0.4" : "";
+    el("musicBtn").setAttribute("aria-pressed", String(musicOff));
+  }
+  el("musicBtn").addEventListener("click", toggleMusic);
+
   el("startBtn").addEventListener("click", start);
   el("againBtn").addEventListener("click", start);
 
@@ -1584,6 +1733,7 @@
     start, finish,
     poke: (dt) => update(dt),
     debug: () => ({ cat, objs, bots }),
+    audioNodes: () => ({ ctx: actx, master, music }),
     tune: TUNE,
     setInput: (x, y) => { ext.on = true; ext.x = x; ext.y = y; },
     dash: tryDash,
